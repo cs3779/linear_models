@@ -25,4 +25,69 @@ options(
 scale_colour_discrete = scale_colour_viridis_d
 scale_fill_discrete = scale_fill_viridis_d
 theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+library(p8105.datasets)
+set.seed(1)
 ```
+
+# **Model Fitting**
+```{r}
+data("nyc_airbnb")
+
+nyc_airbnb = 
+  nyc_airbnb %>% 
+  mutate(stars = review_scores_location / 2) %>% 
+  rename(
+    boro = neighbourhood_group,
+    neighborhood = neighbourhood) %>% 
+  filter(boro != "Staten Island") %>% 
+  select(price, stars, boro, neighborhood, room_type)
+```
+
+```{r}
+fit = lm(price ~ stars + boro, data = nyc_airbnb)
+```
+
+```{r}
+fit
+
+summary(fit)
+
+coef(fit)
+summary(fit)$coef
+
+```
+
+## Tidy the results
+```{r}
+fit %>% 
+  broom::tidy() %>% 
+  mutate(term = str_replace(term, "boro", "Boro: ")) %>% 
+  knitr::kable(digits = 3)
+```
+
+
+# Take a look at factors...
+```{r}
+nyc_airbnb = 
+  nyc_airbnb %>% 
+  mutate(
+    boro = fct_infreq(boro),
+    room_type = fct_infreq(room_type)
+  ) 
+```
+
+```{r}
+fit = lm(price ~ stars + boro, data=nyc_airbnb)
+
+fit %>% 
+  broom::tidy()
+
+fit %>% 
+  broom::glance()
+```
+
+
+
+
+

@@ -396,7 +396,148 @@ options(
 )
 scale_colour_discrete = scale_colour_viridis_d
 scale_fill_discrete = scale_fill_viridis_d
-theme_set(theme_minimal() + theme(legend.position = &quot;bottom&quot;))</code></pre>
+theme_set(theme_minimal() + theme(legend.position = &quot;bottom&quot;))
+
+library(p8105.datasets)
+set.seed(1)</code></pre>
+<div id="model-fitting" class="section level1">
+<h1><strong>Model Fitting</strong></h1>
+<pre class="r"><code>data(&quot;nyc_airbnb&quot;)
+
+nyc_airbnb = 
+  nyc_airbnb %&gt;% 
+  mutate(stars = review_scores_location / 2) %&gt;% 
+  rename(
+    boro = neighbourhood_group,
+    neighborhood = neighbourhood) %&gt;% 
+  filter(boro != &quot;Staten Island&quot;) %&gt;% 
+  select(price, stars, boro, neighborhood, room_type)</code></pre>
+<pre class="r"><code>fit = lm(price ~ stars + boro, data = nyc_airbnb)</code></pre>
+<pre class="r"><code>fit</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = price ~ stars + boro, data = nyc_airbnb)
+## 
+## Coefficients:
+##   (Intercept)          stars   boroBrooklyn  boroManhattan     boroQueens  
+##        -70.41          31.99          40.50          90.25          13.21</code></pre>
+<pre class="r"><code>summary(fit)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = price ~ stars + boro, data = nyc_airbnb)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -169.8  -64.0  -29.0   20.2 9870.0 
+## 
+## Coefficients:
+##               Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)    -70.414     14.021  -5.022 5.14e-07 ***
+## stars           31.990      2.527  12.657  &lt; 2e-16 ***
+## boroBrooklyn    40.500      8.559   4.732 2.23e-06 ***
+## boroManhattan   90.254      8.567  10.534  &lt; 2e-16 ***
+## boroQueens      13.206      9.065   1.457    0.145    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 181.5 on 30525 degrees of freedom
+##   (9962 observations deleted due to missingness)
+## Multiple R-squared:  0.03423,    Adjusted R-squared:  0.03411 
+## F-statistic: 270.5 on 4 and 30525 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>coef(fit)</code></pre>
+<pre><code>##   (Intercept)         stars  boroBrooklyn boroManhattan    boroQueens 
+##     -70.41446      31.98989      40.50030      90.25393      13.20617</code></pre>
+<pre class="r"><code>summary(fit)$coef</code></pre>
+<pre><code>##                Estimate Std. Error   t value     Pr(&gt;|t|)
+## (Intercept)   -70.41446  14.020697 -5.022180 5.137589e-07
+## stars          31.98989   2.527500 12.656733 1.269392e-36
+## boroBrooklyn   40.50030   8.558724  4.732049 2.232595e-06
+## boroManhattan  90.25393   8.567490 10.534465 6.638618e-26
+## boroQueens     13.20617   9.064879  1.456850 1.451682e-01</code></pre>
+<div id="tidy-the-results" class="section level2">
+<h2>Tidy the results</h2>
+<pre class="r"><code>fit %&gt;% 
+  broom::tidy() %&gt;% 
+  mutate(term = str_replace(term, &quot;boro&quot;, &quot;Boro: &quot;)) %&gt;% 
+  knitr::kable(digits = 3)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-70.414</td>
+<td align="right">14.021</td>
+<td align="right">-5.022</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="even">
+<td align="left">stars</td>
+<td align="right">31.990</td>
+<td align="right">2.527</td>
+<td align="right">12.657</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="odd">
+<td align="left">Boro: Brooklyn</td>
+<td align="right">40.500</td>
+<td align="right">8.559</td>
+<td align="right">4.732</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="even">
+<td align="left">Boro: Manhattan</td>
+<td align="right">90.254</td>
+<td align="right">8.567</td>
+<td align="right">10.534</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="odd">
+<td align="left">Boro: Queens</td>
+<td align="right">13.206</td>
+<td align="right">9.065</td>
+<td align="right">1.457</td>
+<td align="right">0.145</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="take-a-look-at-factors" class="section level1">
+<h1>Take a look at factors…</h1>
+<pre class="r"><code>nyc_airbnb = 
+  nyc_airbnb %&gt;% 
+  mutate(
+    boro = fct_infreq(boro),
+    room_type = fct_infreq(room_type)
+  ) </code></pre>
+<pre class="r"><code>fit = lm(price ~ stars + boro, data=nyc_airbnb)
+
+fit %&gt;% 
+  broom::tidy()</code></pre>
+<pre><code>## # A tibble: 5 x 5
+##   term         estimate std.error statistic   p.value
+##   &lt;chr&gt;           &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+## 1 (Intercept)      19.8     12.2       1.63 1.04e-  1
+## 2 stars            32.0      2.53     12.7  1.27e- 36
+## 3 boroBrooklyn    -49.8      2.23    -22.3  6.32e-109
+## 4 boroQueens      -77.0      3.73    -20.7  2.58e- 94
+## 5 boroBronx       -90.3      8.57    -10.5  6.64e- 26</code></pre>
+<pre class="r"><code>fit %&gt;% 
+  broom::glance()</code></pre>
+<pre><code>## # A tibble: 1 x 11
+##   r.squared adj.r.squared sigma statistic   p.value    df  logLik    AIC
+##       &lt;dbl&gt;         &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt;  &lt;dbl&gt;
+## 1    0.0342        0.0341  182.      271. 6.73e-229     5 -2.02e5 4.04e5
+## # ... with 3 more variables: BIC &lt;dbl&gt;, deviance &lt;dbl&gt;, df.residual &lt;int&gt;</code></pre>
+</div>
 
 
 
