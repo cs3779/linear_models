@@ -94,11 +94,32 @@ rmse(wiggly_mod, test_df)
 
 # **Completing Cross Validation using _modelr_**
 ```{r}
+cv_df = 
+  crossv_mc(nonlin_df, 100)
 
+cv_df %>% pull(train) %>% .[[1]] %>% as_tibble
 ```
+Note: Default 80/20 for _crossv_mc_
 
+```{r}
+cv_df =
+  cv_df %>% 
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble))
 
-
+cv_results = 
+cv_df %>% 
+  mutate(
+    linear_mods = map(.x = train, ~lm(y ~ x, data = .x)),
+    smooth_mods = map(.x = train, ~gam(y ~ s(x), data = .x)),
+    wiggly_mods = map(.x = train, ~gam(y~s(x, k=30), sp=10e-6, data = .x)),
+    
+    rmse_lin = map2(.x = linear_mods, .y = test, ~rmse(.x, .y)),
+    rmse_smooth = map2(.x = smooth_mods, .y = test, ~rmse(.x, .y)),
+    rmse_wiggly = map2(.x = wiggly_mods, .y = test, ~rmse(.x, .y))
+  )
+```
 
 
 
